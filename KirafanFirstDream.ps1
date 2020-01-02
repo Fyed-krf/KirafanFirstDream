@@ -1,5 +1,12 @@
 $ErrorActionPreference = 'Stop'
 
+if ([string]::IsNullOrEmpty($env:KRF_FD_API_KEY)) {
+    throw "env:KRF_FD_API_KEY is empty"
+}
+if ([string]::IsNullOrEmpty($env:KRF_FD_API_SECRET)) {
+    throw "env:KRF_FD_API_SECRET is empty"
+}
+
 function Wait-ApiCall {
     [CmdletBinding()]
     param ()
@@ -141,6 +148,41 @@ function Get-AuthorizationHeaderValue {
     "OAuth ${oauthParamString}"
 }
 
+function Test-AccountLocked {
+    [CmdletBinding()]
+    param (
+        [System.Management.Automation.ErrorRecord]$ErrorObject,
+
+        [string]$ErrorCodeToCheck = 326
+    )
+
+    $errorMessage = ($ErrorObject)?.ToString()
+    if ([string]::IsNullOrEmpty($errorMessage)) {
+        $false
+        return
+    }
+
+    try {
+        $msgObj = ConvertFrom-Json -InputObject $errorMessage
+        $errorCode = ($msgObj)?.errors?[0]?.code
+        if ($errorCode -eq $ErrorCodeToCheck) {
+            $true
+        }
+        else {
+            $false
+        }
+    }
+    catch {
+        $err = $_
+        $err | Out-String | Write-Warning
+        Write-Warning '----------------------------------------'
+        $err.ScriptStackTrace | Out-String | Write-Warning
+
+        $false
+        return
+    }
+}
+
 if (([string]::IsNullOrEmpty($env:KRF_FD_ACCESS_TOKEN)) -or ([string]::IsNullOrEmpty($env:KRF_FD_ACCESS_TOKEN_SECRET))) {
     $oauthUserParams = @{
         oauth_consumer_key = $env:KRF_FD_API_KEY
@@ -177,7 +219,7 @@ if (([string]::IsNullOrEmpty($env:KRF_FD_ACCESS_TOKEN)) -or ([string]::IsNullOrE
     
     $redirectUri = "https://api.twitter.com/oauth/authorize?oauth_token=$([uri]::EscapeDataString($requestTokenResponse.oauth_token))"
     Start-Process -FilePath $redirectUri
-    $oauthVerifier = Read-Host -Prompt 'enter pin code:'
+    $oauthVerifier = Read-Host -Prompt 'enter pin code'
     
     
     
@@ -220,8 +262,6 @@ if (([string]::IsNullOrEmpty($env:KRF_FD_ACCESS_TOKEN)) -or ([string]::IsNullOrE
     $env:KRF_FD_ACCESS_TOKEN = $accessTokenResponse.oauth_token
     $env:KRF_FD_ACCESS_TOKEN_SECRET = $accessTokenResponse.oauth_token_secret
 }
-
-
 
 $oauthUserParams = @{
     oauth_consumer_key = $env:KRF_FD_API_KEY
@@ -313,9 +353,16 @@ while ($todayLikesCount -lt $targetLikeCount) {
                 
         }
         catch {
-            $_ | Out-String | Write-Warning
-            Write-Warning '----------------------------------------'
-            $_.ScriptStackTrace | Out-String | Write-Warning
+            $err = $_
+            $locked = Test-AccountLocked -ErrorObject $err
+            if ($locked) {
+                throw $err
+            }
+            else {
+                $err | Out-String | Write-Warning
+                Write-Warning '----------------------------------------'
+                $err.ScriptStackTrace | Out-String | Write-Warning
+            }
 
         }
     }

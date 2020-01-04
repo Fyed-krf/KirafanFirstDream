@@ -79,7 +79,7 @@ function Get-AuthorizationHeaderValue {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$ConsumerSecuret,
+        [string]$ConsumerSecret,
 
         [string]$TokenSecret = ""
     )
@@ -117,7 +117,7 @@ function Get-AuthorizationHeaderValue {
 
     $signatureBaseString = "$($Method.ToUpper())&$([uri]::EscapeDataString($BaseUri))&$([uri]::EscapeDataString($parameterString))"
 
-    $signingKey = "$([uri]::EscapeDataString($ConsumerSecuret))&$([uri]::EscapeDataString($TokenSecret))"
+    $signingKey = "$([uri]::EscapeDataString($ConsumerSecret))&$([uri]::EscapeDataString($TokenSecret))"
 
     $utf8 = [System.Text.UTF8Encoding]::new()
     $signingKeyBytes = $utf8.GetBytes($signingKey)
@@ -190,7 +190,7 @@ if (([string]::IsNullOrEmpty($env:KRF_FD_ACCESS_TOKEN)) -or ([string]::IsNullOrE
     }
     
     $endpointUri = 'https://api.twitter.com/oauth/request_token'
-    $authorizationHeaderValue = Get-AuthorizationHeaderValue -Method 'POST' -BaseUri $endpointUri -OAuthUserParams $oauthUserParams -ConsumerSecuret $env:KRF_FD_API_SECRET
+    $authorizationHeaderValue = Get-AuthorizationHeaderValue -Method 'POST' -BaseUri $endpointUri -OAuthUserParams $oauthUserParams -ConsumerSecret $env:KRF_FD_API_SECRET
     $headers = @{
         Authorization = $authorizationHeaderValue
     }
@@ -229,7 +229,7 @@ if (([string]::IsNullOrEmpty($env:KRF_FD_ACCESS_TOKEN)) -or ([string]::IsNullOrE
         oauth_verifier = $oauthVerifier
     }
     $endpointUri = 'https://api.twitter.com/oauth/access_token'
-    $authorizationHeaderValue = Get-AuthorizationHeaderValue -Method 'POST' -BaseUri $endpointUri -OAuthUserParams $oauthUserParams -ConsumerSecuret $env:KRF_FD_API_SECRET
+    $authorizationHeaderValue = Get-AuthorizationHeaderValue -Method 'POST' -BaseUri $endpointUri -OAuthUserParams $oauthUserParams -ConsumerSecret $env:KRF_FD_API_SECRET
     $headers = @{
         Authorization = $authorizationHeaderValue
     }
@@ -293,7 +293,7 @@ while ($todayLikesCount -lt $targetLikeCount) {
         $bodyParams.Add('max_id', $minId-1)
     }
     $endpointUri = 'https://api.twitter.com/1.1/search/tweets.json'
-    $authorizationHeaderValue = Get-AuthorizationHeaderValue -Method 'GET' -BaseUri $endpointUri -OAuthUserParams $oauthUserParams -ConsumerSecuret $env:KRF_FD_API_SECRET -BodyParams $bodyParams -TokenSecret $env:KRF_FD_ACCESS_TOKEN_SECRET
+    $authorizationHeaderValue = Get-AuthorizationHeaderValue -Method 'GET' -BaseUri $endpointUri -OAuthUserParams $oauthUserParams -ConsumerSecret $env:KRF_FD_API_SECRET -BodyParams $bodyParams -TokenSecret $env:KRF_FD_ACCESS_TOKEN_SECRET
     $headers = @{
         Authorization = $authorizationHeaderValue
     }
@@ -331,7 +331,7 @@ while ($todayLikesCount -lt $targetLikeCount) {
                     id = $tweet.id
                 }
                 $endpointUri = 'https://api.twitter.com/1.1/favorites/create.json'
-                $authorizationHeaderValue = Get-AuthorizationHeaderValue -Method 'POST' -BaseUri $endpointUri -OAuthUserParams $oauthUserParams -ConsumerSecuret $env:KRF_FD_API_SECRET -BodyParams $bodyParams -TokenSecret $env:KRF_FD_ACCESS_TOKEN_SECRET
+                $authorizationHeaderValue = Get-AuthorizationHeaderValue -Method 'POST' -BaseUri $endpointUri -OAuthUserParams $oauthUserParams -ConsumerSecret $env:KRF_FD_API_SECRET -BodyParams $bodyParams -TokenSecret $env:KRF_FD_ACCESS_TOKEN_SECRET
                 $headers = @{
                     Authorization = $authorizationHeaderValue
                 }
